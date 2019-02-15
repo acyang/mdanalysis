@@ -16,11 +16,12 @@ try:
     import matplotlib
 
     #matplotlib.use('agg')  # no interactive plotting, only save figures
-#    import pylab
+    #import pylab
     from matplotlib import pyplot as plt
-    # This import registers the 3D projection, but is otherwise unused.
-#    from mpl_toolkits.mplot3d import Axes3D  
-    from mpl_toolkits.mplot3d.art3d import Poly3DCollection, Line3DCollection # noqa: F401 unused import    
+    ## This import registers the 3D projection, but is otherwise unused.
+    #from mpl_toolkits.mplot3d import Axes3D
+    #from mpl_toolkits.mplot3d.art3d import Line3DCollection # noqa: F401 unused import   
+    from mpl_toolkits.mplot3d.art3d import Poly3DCollection # noqa: F401 unused import    
     have_matplotlib = True
 except ImportError:
     have_matplotlib = False
@@ -35,6 +36,8 @@ def gaussian2(r2):
     gauss = e**(-0.5*r2)
     return gauss
 #print(gaussian(0,2,4))
+#print(gaussian2(0.0),gaussian2(0.0)/sqrt(2*pi))
+#input("Press Enter to continue...")
 
 #MDAnalysis.start_logging()
 file='indentation/indentation/dump/aver50.15.data'
@@ -42,7 +45,6 @@ simulation=MDAnalysis.Universe(file, atom_style='id type x y z')
 all_atoms=simulation.atoms
 natom=all_atoms.n_atoms
 #print(natom)
-
 posits=all_atoms.positions
 #print(posits.ndim, posits.shape, posits.dtype)
 #print(posits[0,0],posits[0,1],posits[0,2])
@@ -146,6 +148,9 @@ grids = 2*grid_num+1
 f = open('features.csv', 'a', newline='')
 writer = csv.writer(f)
 
+f2 = open('check.csv', 'a', newline='')
+writer2 = csv.writer(f2)
+
 for i in range(nshrink):
     center_atom = atoms_in_shrinkbox[i]
     print ( "center atom ",atoms_in_shrinkbox.ids[i] , "position ", center_atom.position)
@@ -154,32 +159,29 @@ for i in range(nshrink):
     grid_centers = np.zeros( [grids, grids, grids, 3], dtype=np.float32 )
     #print(grid_centers.shape)
     for ix in range(-grid_num,grid_num+1):
+        ixx=ix+grid_num
         for iy in range(-grid_num,grid_num+1):
-            for iz in range(-grid_num,grid_num+1):
-                ixx=ix+grid_num
-                iyy=iy+grid_num
+            iyy=iy+grid_num
+            for iz in range(-grid_num,grid_num+1):                               
                 izz=iz+grid_num
                 #print(ix,iy,iz)
                 grid_centers[ixx, iyy, izz, 0]=center_atom.position[0] + ix*grid_length
                 grid_centers[ixx, iyy, izz, 1]=center_atom.position[1] + iy*grid_length
                 grid_centers[ixx, iyy, izz, 2]=center_atom.position[2] + iz*grid_length
-                grid_center=grid_centers[ixx, iyy, izz,:]
-                d2=(grid_center[0]-center_atom.position[0])**2+(grid_center[1]-center_atom.position[1])**2+(grid_center[2]-center_atom.position[2])**2
-                intensive[ixx, iyy, izz] += gaussian2(d2)
     #print(grid_centers, grid_centers.shape, grid_centers.dtype)
     
-    xlb = center_atom.position[0] - padding
-    xhb = center_atom.position[0] + padding
-    ylb = center_atom.position[1] - padding
-    yhb = center_atom.position[1] + padding
-    zlb = center_atom.position[2] - padding
-    zhb = center_atom.position[2] + padding
-    #print ( "pov boundary ", xlb, xhb, ylb, yhb, zlb, zhb )
-    xcriteria = "prop x > " + str(xlb) + " and " + "prop x < " + str(xhb)
-    ycriteria = "prop y > " + str(ylb) + " and " + "prop y < " + str(yhb)
-    zcriteria = "prop z > " + str(zlb) + " and " + "prop z < " + str(zhb)
-    selector = xcriteria + " and " + ycriteria + " and " + zcriteria
- 
+#    xlb = center_atom.position[0] - padding
+#    xhb = center_atom.position[0] + padding
+#    ylb = center_atom.position[1] - padding
+#    yhb = center_atom.position[1] + padding
+#    zlb = center_atom.position[2] - padding
+#    zhb = center_atom.position[2] + padding
+#    #print ( "pov boundary ", xlb, xhb, ylb, yhb, zlb, zhb )
+#    xcriteria = "prop x > " + str(xlb) + " and " + "prop x < " + str(xhb)
+#    ycriteria = "prop y > " + str(ylb) + " and " + "prop y < " + str(yhb)
+#    zcriteria = "prop z > " + str(zlb) + " and " + "prop z < " + str(zhb)
+#    selector = xcriteria + " and " + ycriteria + " and " + zcriteria
+
 #    v3 = np.array([[xlb, ylb, zlb],
 #              [xhb, ylb, zlb],
 #              [xlb, yhb, zlb],
@@ -216,20 +218,23 @@ for i in range(nshrink):
 #                x, y, z = grid_centers[ix+grid_num, iy+grid_num, iz+grid_num,:]
 #                #label = '(%4.2f, %4.2f, %4.2f)' % (x, y, z)
 #                label = '(%4.2f)' % (x)
-#                ax.text(ix+grid_num, iy+grid_num, iz+grid_num, label, 'x', fontsize=8) 
-
+#                ax.text(ix+grid_num, iy+grid_num, iz+grid_num, label, 'x', fontsize=8)
+    
+    selector = "point " + str(center_atom.position[0]) + " " + str(center_atom.position[1]) + " " + str(center_atom.position[2]) + " "+ str(padding)
+    #print(selector)
+    
     atoms_in_pov=all_atoms.select_atoms(selector)
     npov=atoms_in_pov.n_atoms
-    #print(atoms_in_pov)
+    #print(atoms_in_pov.ids[39], atoms_in_pov[39].posits)
     #print(npov)
     for j in range(npov):
         neigh_atom = atoms_in_pov[j]
         #print ( "neigh atom ",atoms_in_pov.id[j] , "position ", neigh_atom.position)
         for ix in range(-grid_num,grid_num+1):
+            ixx=ix+grid_num
             for iy in range(-grid_num,grid_num+1):
-                for iz in range(-grid_num,grid_num+1):
-                    ixx=ix+grid_num
-                    iyy=iy+grid_num
+                iyy=iy+grid_num
+                for iz in range(-grid_num,grid_num+1):                                      
                     izz=iz+grid_num
                     grid_center=grid_centers[ixx, iyy, izz,:]
                     #print("center of ",ix,iy,iz,"is ", grid_center[:])
