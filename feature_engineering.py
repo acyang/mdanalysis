@@ -262,10 +262,10 @@ for i in range(nshrink):
 #                label = '(%4.2f)' % (intensive[ix+grid_num, iy+grid_num, iz+grid_num])
 #                ax.text(ix+grid_num, iy+grid_num, iz+grid_num, label, 'x', fontsize=8) 
 #    plt.show()
-    intensive /= sqrt(2*pi)
+    intensive /= sqrt(2.0*pi)
     #rowdata=np.append(atoms_in_shrinkbox.ids[i], intensive.flatten())
     rowdata=[atoms_in_shrinkbox.ids[i]]
-    rowdata.extend(intensive.flatten().tolist())
+    rowdata.extend(np.around(intensive, decimals=5).flatten().tolist())
     writer.writerow(rowdata)
     #input("Press Enter to continue...")
     #break
